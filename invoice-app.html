@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mattress Heroes — Invoices</title>
+<style>
+  /* ===== DEPLOY NOTE: set USE_STORAGE=true after uploading to GitHub Pages ===== */
+  :root{
+    --blue:#4f5bdb; --blue-dark:#3f49bd; --ink:#1c2330; --soft:#6b7484;
+    --line:#e6e8ee; --bg:#eef0f4; --card:#fff; --good:#1a9b54; --good-bg:#e6f6ee;
+    --warn:#b46a00; --warn-bg:#fdf1dd; --danger:#c8362a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.45;font-size:15px}
+  h1,h2,h3,h4{margin:0;font-weight:700;letter-spacing:-.01em}
+  button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,textarea,select{font:inherit;color:var(--ink)}
+
+  /* ---- app chrome ---- */
+  .head{background:var(--blue);color:#fff;padding:14px 16px 0;position:sticky;top:0;z-index:30}
+  .head-row{display:flex;align-items:center;gap:10px;min-height:34px}
+  .head-row h1{font-size:20px;font-weight:800;flex:1;text-align:center}
+  .icon-btn{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;font-size:19px;color:#fff}
+  .icon-btn:active{background:rgba(255,255,255,.18)}
+  .seg{display:flex;margin-top:12px}
+  .seg button{flex:1;padding:11px 4px;color:rgba(255,255,255,.7);font-weight:700;font-size:15px;
+    border-bottom:3px solid transparent}
+  .seg button.on{color:#fff;border-bottom-color:#fff}
+
+  .wrap{max-width:760px;margin:0 auto;padding:14px 14px 90px}
+  .card{background:var(--card);border-radius:14px;box-shadow:0 1px 2px rgba(28,35,48,.06);margin-bottom:12px}
+  .pad{padding:16px}
+
+  .fab{position:fixed;right:18px;bottom:22px;width:62px;height:62px;border-radius:50%;
+    background:var(--blue);color:#fff;font-size:34px;display:grid;place-items:center;
+    box-shadow:0 6px 18px rgba(79,91,219,.5);z-index:25}
+  .fab:active{background:var(--blue-dark)}
+
+  /* ---- list ---- */
+  .yearbar{display:flex;justify-content:space-between;background:#f4f5f8;padding:11px 16px;
+    font-weight:700;color:var(--soft);border-radius:10px;margin-bottom:10px}
+  .li{display:flex;align-items:flex-start;padding:15px 16px;border-bottom:1px solid var(--line);cursor:pointer}
+  .li:last-child{border-bottom:none}
+  .li:active{background:#fafbfc}
+  .li .name{font-size:17px;font-weight:600}
+  .li .no{color:var(--soft);font-size:13px;margin-top:2px}
+  .li .right{margin-left:auto;text-align:right}
+  .li .amt{font-size:17px;font-weight:700}
+  .li .status{font-size:13px;margin-top:2px;font-weight:600}
+  .li .status.paid{color:var(--good)} .li .status.unpaid{color:var(--warn)}
+  .li .status.partial{color:var(--warn)}
+
+  .empty{text-align:center;color:var(--soft);padding:54px 22px}
+  .empty .big{font-size:42px;margin-bottom:6px}
+
+  /* ---- forms ---- */
+  label.f{display:block;font-size:12px;font-weight:700;color:var(--soft);text-transform:uppercase;
+    letter-spacing:.04em;margin:0 0 6px}
+  .inp{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:16px}
+  .inp:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(79,91,219,.15)}
+  textarea.inp{resize:vertical;min-height:62px}
+  .field{margin-bottom:14px}
+  .grid2{display:flex;gap:12px}.grid2>*{flex:1;min-width:0}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:var(--blue);
+    color:#fff;padding:13px 18px;border-radius:11px;font-weight:700;font-size:15px;width:100%}
+  .btn:active{background:var(--blue-dark)}
+  .btn.ghost{background:#eef0f6;color:var(--ink)} .btn.ghost:active{background:#e3e6ef}
+  .btn.dang{background:#fbe9e7;color:var(--danger)}
+  .btn.sm{width:auto;padding:9px 14px;font-size:14px}
+  .btnrow{display:flex;gap:10px}
+
+  .sec-h{font-size:13px;font-weight:800;color:var(--soft);text-transform:uppercase;letter-spacing:.05em;
+    margin:18px 4px 8px}
+
+  /* item rows */
+  .irow{display:flex;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+  .irow .d{flex:1;min-width:0}
+  .irow .nm{font-weight:600}
+  .irow .sub{font-size:13px;color:var(--soft)}
+  .irow .amt{font-weight:700;white-space:nowrap}
+  .irow .x{color:var(--danger);font-size:22px;padding:2px 6px}
+
+  .totbox{margin-top:8px}
+  .totbox .tr{display:flex;justify-content:space-between;padding:6px 0;font-size:15px}
+  .totbox .grand{border-top:2px solid var(--ink);margin-top:4px;padding-top:10px;font-size:19px;font-weight:800}
+  .totbox .pay{color:var(--good)}
+
+  /* chips for picker */
+  .pickitem{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);cursor:pointer}
+  .pickitem:active{background:#fafbfc}
+  .pickitem .nm{font-weight:600}.pickitem .sub{font-size:13px;color:var(--soft)}
+  .pickitem .pr{margin-left:auto;font-weight:700;color:var(--soft)}
+  .addnew{color:var(--blue);font-weight:700;padding:14px 16px;cursor:pointer;display:flex;gap:8px;align-items:center}
+
+  /* modal sheet */
+  .sheet-bg{position:fixed;inset:0;background:rgba(20,25,35,.45);z-index:40;display:none}
+  .sheet-bg.show{display:block}
+  .sheet{position:fixed;left:0;right:0;bottom:0;max-width:760px;margin:0 auto;background:var(--bg);
+    border-radius:18px 18px 0 0;z-index:41;transform:translateY(100%);transition:transform .22s ease;
+    max-height:92vh;overflow-y:auto;display:none}
+  .sheet.show{display:block;transform:translateY(0)}
+  .sheet-head{position:sticky;top:0;background:var(--blue);color:#fff;padding:14px 16px;display:flex;
+    align-items:center;gap:10px;border-radius:18px 18px 0 0}
+  .sheet-head h3{flex:1;font-size:17px}
+  .sheet-body{padding:16px}
+
+  /* reports */
+  .rtab{display:flex;gap:6px;margin-bottom:12px}
+  .rtab button{flex:1;padding:10px;border:1px solid var(--blue);border-radius:9px;color:var(--blue);font-weight:700}
+  .rtab button.on{background:var(--blue);color:#fff}
+  table.rep{width:100%;border-collapse:collapse}
+  table.rep th{font-size:13px;color:var(--soft);text-align:right;padding:8px 6px;border-bottom:1px solid var(--line)}
+  table.rep th:first-child{text-align:left}
+  table.rep td{padding:11px 6px;text-align:right;border-bottom:1px solid var(--line)}
+  table.rep td:first-child{text-align:left;font-weight:600}
+  table.rep tr.sum td{background:#f4f5f8;font-weight:800}
+  .yrs{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .yrs button{padding:9px 14px;border:1px solid var(--blue);border-radius:8px;color:var(--blue);font-weight:700}
+  .yrs button.on{background:var(--blue);color:#fff}
+
+  /* signature pad */
+  .sigwrap{border:1px dashed var(--line);border-radius:10px;background:#fff;position:relative}
+  canvas#sig{width:100%;height:160px;display:block;touch-action:none;border-radius:10px}
+  .sighint{position:absolute;left:12px;top:12px;color:var(--soft);font-size:13px;pointer-events:none}
+
+  /* ===== invoice paper (preview / print) ===== */
+  .paper{background:#fff;color:#000;font-size:13px}
+  .pp{padding:22px}
+  .pp-top{display:flex;gap:14px;align-items:flex-start}
+  .pp-logo{width:84px;height:84px;object-fit:contain;border-radius:6px;flex-shrink:0;background:#fff}
+  .pp-biz{flex:1}
+  .pp-biz .bn{font-size:18px;font-weight:800}
+  .pp-biz p{margin:1px 0;font-size:12px;color:#333}
+  .pp-meta{text-align:right;font-size:12px;min-width:120px}
+  .pp-meta .lbl{font-size:10px;font-weight:800;color:#666;text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
+  .pp-meta .lbl:first-child{margin-top:0}
+  .pp-meta .val{font-weight:600}
+  .pp-meta .bal{font-size:15px;font-weight:800}
+  .pp-billto{margin:18px 0 4px}
+  .pp-billto .lbl{font-size:10px;font-weight:800;color:#666;text-transform:uppercase;letter-spacing:.04em}
+  .pp-billto .bn{font-size:15px;font-weight:700;margin-top:2px}
+  .pp-billto p{margin:1px 0;font-size:12px;color:#333}
+  table.pl{width:100%;border-collapse:collapse;margin-top:14px}
+  table.pl th{font-size:10px;font-weight:800;color:#444;text-transform:uppercase;letter-spacing:.04em;
+    text-align:right;padding:7px 4px;border-bottom:2px solid #111}
+  table.pl th:first-child{text-align:left}
+  table.pl td{padding:9px 4px;text-align:right;border-bottom:1px dotted #ccc;font-size:12.5px}
+  table.pl td:first-child{text-align:left}
+  table.pl .ds{font-size:11px;color:#666}
+  .pp-bottom{display:flex;gap:20px;margin-top:16px;flex-wrap:wrap}
+  .pp-payinfo{flex:1;min-width:160px}
+  .pp-payinfo h4{font-size:14px;margin-bottom:6px}
+  .pp-payinfo .lbl{font-size:10px;font-weight:800;color:#666;text-transform:uppercase;margin-top:6px}
+  .pp-payinfo p{margin:1px 0;font-size:12px;white-space:pre-line}
+  .pp-tot{flex:1;min-width:200px}
+  .pp-tot .tr{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px solid #eee}
+  .pp-tot .tr.big{font-weight:800;font-size:15px;border-bottom:2px solid #111}
+  .pp-tot .tr.pay{color:#1a7a45}
+  .pp-tot .tr.bal{font-weight:800;font-size:16px;border-bottom:none;margin-top:4px}
+  .pp-sig{margin-top:26px}
+  .pp-sig img{max-width:240px;display:block}
+  .pp-sig .lbl{font-size:10px;font-weight:800;color:#666;text-transform:uppercase;margin-top:4px}
+  .pp-note{margin-top:20px;padding-top:12px;border-top:1px solid #eee;font-size:12px;color:#555;white-space:pre-line}
+
+  @media print{
+    body{background:#fff}
+    .head,.fab,.noprint{display:none!important}
+    .wrap{padding:0;max-width:100%}
+    .card{box-shadow:none;border-radius:0;margin:0}
+    .pp{padding:10mm}
+  }
+</style>
+</head>
+<body>
+
+<div class="head" id="appHead">
+  <div class="head-row">
+    <button class="icon-btn" id="hLeft" onclick="headLeft()">⚙️</button>
+    <h1 id="hTitle">Invoices</h1>
+    <button class="icon-btn" id="hRight" onclick="headRight()"> </button>
+  </div>
+  <div class="seg" id="listSeg">
+    <button class="on" data-filter="all" onclick="setFilter('all',this)">All</button>
+    <button data-filter="outstanding" onclick="setFilter('outstanding',this)">Outstanding</button>
+    <button data-filter="paid" onclick="setFilter('paid',this)">Paid</button>
+  </div>
+</div>
+
+<div class="wrap" id="screen"></div>
+<button class="fab noprint" id="fab" onclick="newInvoice()">+</button>
+
+<!-- bottom sheet -->
+<div class="sheet-bg" id="sheetBg" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-head">
+    <button class="icon-btn" onclick="closeSheet()">✕</button>
+    <h3 id="sheetTitle"></h3>
+    <button class="icon-btn" id="sheetAction" style="font-size:15px;font-weight:700"></button>
+  </div>
+  <div class="sheet-body" id="sheetBody"></div>
+</div>
+
+<script>
+/* ================= STORAGE ================= */
+const USE_STORAGE = false;   // <-- change to true after deploying to GitHub Pages
+const KEY='mattressheroes_inv_v1';
+let db={
+  business:null, clients:[], items:[], invoices:[], counter:162
+};
+function load(){
+  if(USE_STORAGE){ try{const d=localStorage.getItem(KEY); if(d) db=JSON.parse(d);}catch(e){} }
+  if(!db.business) db.business={
+    name:'Mattress heroes', logo:'', contact:'Marina Silva', vat:'07700804672',
+    addr:'Flat 1, la neueve route\nSt Brelade parish hall\nJE3 8BS',
+    phone:'07700804672', email:'hsilvacw@gmail.com',
+    payinfo:'Natwest\nMarina Rico\n27291677\n60-12-03',
+    notes:'Thank you for your business!', taxRate:0, taxName:'VAT', prefix:'INV', padTo:4
+  };
+  // seed a few common Mattress Heroes items if empty
+  if(!db.items.length) db.items=[
+    {id:nid(),name:'Sofa 2 seats',price:50},{id:nid(),name:'Sofa 3 seats',price:75},
+    {id:nid(),name:'Sofa chair',price:30},{id:nid(),name:'Dining chair',price:15},
+    {id:nid(),name:'Rug treatment large',price:35},{id:nid(),name:'Mattress single',price:30},
+    {id:nid(),name:'Mattress double',price:40},{id:nid(),name:'Carpet per room',price:35},
+    {id:nid(),name:'Curtains',price:15}
+  ];
+}
+function save(){ if(USE_STORAGE){ try{localStorage.setItem(KEY,JSON.stringify(db));}catch(e){} } }
+function nid(){ return 'x'+Math.random().toString(36).slice(2,9)+Date.now().toString(36); }
+
+/* ================= HELPERS ================= */
+const $=id=>document.getElementById(id);
+const money=n=>'£'+(Number(n)||0).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const todayISO=()=>new Date().toISOString().slice(0,10);
+function fmt(iso){ if(!iso)return''; const d=new Date(iso+'T00:00'); return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+function fmtShort(iso){ if(!iso)return''; const d=new Date(iso+'T00:00'); return d.toLocaleDateString('en-GB'); }
+function nextNo(){ return db.business.prefix+String(db.counter).padStart(db.business.padTo,'0'); }
+
+function invTotals(inv){
+  const sub=(inv.items||[]).reduce((s,i)=>s+(+i.qty||0)*(+i.price||0),0);
+  const tax=sub*(+inv.taxRate||0)/100;
+  const total=sub+tax;
+  const paid=(inv.payments||[]).reduce((s,p)=>s+(+p.amount||0),0);
+  return {sub,tax,total,paid,balance:total-paid};
+}
+function invStatus(inv){
+  const t=invTotals(inv);
+  if(t.paid<=0) return 'unpaid';
+  if(t.balance>0.001) return 'partial';
+  return 'paid';
+}
+
+/* ================= ROUTER ================= */
+let route='list', filter='all', editingId=null, reportTab='paid', reportYear=null, draft=null;
+
+function go(r){ route=r; render(); window.scrollTo(0,0); }
+function render(){
+  // header config
+  $('listSeg').style.display = route==='list'?'flex':'none';
+  if(route==='list'){ $('hTitle').textContent='Invoices'; $('hLeft').textContent='⚙️'; $('hRight').textContent='📊'; $('fab').style.display=''; }
+  else if(route==='editor'){ $('hTitle').textContent=editingId?'Edit invoice':'New invoice'; $('hLeft').textContent='‹'; $('hRight').textContent='Save'; $('fab').style.display='none'; }
+  else if(route==='preview'){ $('hTitle').textContent='Invoice'; $('hLeft').textContent='‹'; $('hRight').textContent='⤓'; $('fab').style.display='none'; }
+  else if(route==='reports'){ $('hTitle').textContent='Reports'; $('hLeft').textContent='‹'; $('hRight').textContent=' '; $('fab').style.display='none'; }
+  else if(route==='settings'){ $('hTitle').textContent='Business details'; $('hLeft').textContent='‹'; $('hRight').textContent='Save'; $('fab').style.display='none'; }
+
+  if(route==='list') renderList();
+  else if(route==='editor') renderEditor();
+  else if(route==='preview') renderPreview();
+  else if(route==='reports') renderReports();
+  else if(route==='settings') renderSettings();
+}
+function headLeft(){
+  if(route==='list') go('settings');
+  else if(route==='editor'){ go('list'); }
+  else if(route==='preview') go('editor');
+  else go('list');
+}
+function headRight(){
+  if(route==='list') go('reports');
+  else if(route==='editor') saveInvoice();
+  else if(route==='preview') window.print();
+  else if(route==='settings') saveSettings();
+}
+function setFilter(f,btn){ filter=f; document.querySelectorAll('#listSeg button').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); renderList(); }
+
+/* ================= LIST ================= */
+function renderList(){
+  const all=[...db.invoices].sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.no||'').localeCompare(a.no||''));
+  let list=all;
+  if(filter==='paid') list=all.filter(i=>invStatus(i)==='paid');
+  if(filter==='outstanding') list=all.filter(i=>invStatus(i)!=='paid');
+
+  if(!list.length){
+    $('screen').innerHTML=`<div class="card"><div class="empty">
+      <div class="big">🧾</div><h3>No invoices yet</h3>
+      <p style="margin:6px 0 14px">Tap + to create your first one.</p>
+    </div></div>`; return;
+  }
+  // group by year
+  const byYear={};
+  list.forEach(i=>{ const y=(i.date||'').slice(0,4)||'—'; (byYear[y]=byYear[y]||[]).push(i); });
+  let html='';
+  Object.keys(byYear).sort((a,b)=>b.localeCompare(a)).forEach(y=>{
+    const tot=byYear[y].reduce((s,i)=>s+invTotals(i).total,0);
+    html+=`<div class="yearbar"><span>${y}</span><span>${money(tot)}</span></div><div class="card">`;
+    byYear[y].forEach(inv=>{
+      const t=invTotals(inv), st=invStatus(inv);
+      let statusTxt = st==='paid' ? 'Paid'+(lastPayDate(inv)?' '+fmtShort(lastPayDate(inv)):'')
+                    : st==='partial' ? 'Due '+money(t.balance)
+                    : 'Unpaid';
+      html+=`<div class="li" onclick="openInvoice('${inv.id}')">
+        <div><div class="name">${esc(inv.clientName||'(no name)')}</div><div class="no">${esc(inv.no)}</div></div>
+        <div class="right"><div class="amt">${money(t.total)}</div>
+          <div class="status ${st}">${statusTxt}</div></div></div>`;
+    });
+    html+=`</div>`;
+  });
+  $('screen').innerHTML=html;
+}
+function lastPayDate(inv){ const p=(inv.payments||[]).filter(x=>x.date).sort((a,b)=>b.date.localeCompare(a.date)); return p[0]?p[0].date:''; }
+
+/* ================= EDITOR ================= */
+function newInvoice(){
+  editingId=null;
+  draft={ id:nid(), no:nextNo(), date:todayISO(), due:todayISO(),
+    clientId:'', clientName:'', clientPhone:'', clientEmail:'', clientAddr:'',
+    items:[], taxRate:db.business.taxRate, notes:db.business.notes,
+    payinfo:db.business.payinfo, payments:[], signature:'', signedDate:'' };
+  go('editor');
+}
+function openInvoice(id){
+  const inv=db.invoices.find(i=>i.id===id); if(!inv)return;
+  editingId=id; draft=JSON.parse(JSON.stringify(inv)); go('editor');
+}
+function renderEditor(){
+  const d=draft, t=invTotals(d);
+  let itemsHtml = d.items.length ? d.items.map((it,idx)=>`
+    <div class="irow">
+      <div class="d"><div class="nm">${esc(it.name)}</div>
+        <div class="sub">${money(it.price)} × ${it.qty}</div></div>
+      <div class="amt">${money(it.price*it.qty)}</div>
+      <button class="x" onclick="editLine(${idx})">✎</button>
+      <button class="x" onclick="removeLine(${idx})">×</button>
+    </div>`).join('') : `<p style="color:var(--soft);padding:8px 0">No items yet.</p>`;
+
+  $('screen').innerHTML=`
+    <div class="card pad">
+      <div class="sec-h" style="margin-top:0">Bill to</div>
+      <div onclick="pickClient()" class="inp" style="cursor:pointer;display:flex;align-items:center">
+        <span style="flex:1">${d.clientName?esc(d.clientName):'<span style=\"color:var(--soft)\">Select or add a client</span>'}</span>
+        <span style="color:var(--blue);font-weight:700">${d.clientName?'Change':'Choose ›'}</span>
+      </div>
+      ${d.clientName?`<div style="color:var(--soft);font-size:13px;margin-top:6px">
+        ${[d.clientPhone,d.clientEmail].filter(Boolean).map(esc).join(' · ')}</div>`:''}
+    </div>
+
+    <div class="card pad">
+      <div class="grid2">
+        <div class="field"><label class="f">Invoice #</label><input class="inp" id="e_no" value="${esc(d.no)}"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label class="f">Date</label><input class="inp" type="date" id="e_date" value="${d.date}"></div>
+        <div class="field"><label class="f">Due date</label><input class="inp" type="date" id="e_due" value="${d.due}"></div>
+      </div>
+    </div>
+
+    <div class="card pad">
+      <div class="sec-h" style="margin-top:0">Items</div>
+      ${itemsHtml}
+      <button class="btn ghost sm" style="margin-top:12px" onclick="pickItem()">+ Add item</button>
+
+      <div class="field" style="margin-top:18px;max-width:160px">
+        <label class="f">${esc(db.business.taxName)} %</label>
+        <input class="inp" type="number" id="e_tax" value="${d.taxRate||0}" min="0" step="0.5" oninput="liveTax()">
+      </div>
+      <div class="totbox">
+        <div class="tr"><span>Subtotal</span><span id="t_sub">${money(t.sub)}</span></div>
+        <div class="tr"><span>${esc(db.business.taxName)}</span><span id="t_tax">${money(t.tax)}</span></div>
+        <div class="tr grand"><span>Total</span><span id="t_total">${money(t.total)}</span></div>
+      </div>
+    </div>
+
+    <div class="card pad">
+      <div class="sec-h" style="margin-top:0">Payments</div>
+      ${(d.payments||[]).length? d.payments.map((p,i)=>`
+        <div class="irow"><div class="d"><div class="nm">${money(p.amount)} <span style="font-weight:400;color:var(--soft)">${esc(p.method||'')}</span></div>
+        <div class="sub">${fmt(p.date)}</div></div>
+        <button class="x" onclick="removePay(${i})">×</button></div>`).join('')
+        :`<p style="color:var(--soft);padding:4px 0">No payments recorded.</p>`}
+      <div class="totbox">
+        <div class="tr pay"><span>Paid</span><span>${money(t.paid)}</span></div>
+        <div class="tr grand"><span>Balance due</span><span id="t_bal">${money(t.balance)}</span></div>
+      </div>
+      <button class="btn ghost sm" style="margin-top:10px" onclick="addPayment()">+ Record payment</button>
+    </div>
+
+    <div class="card pad">
+      <div class="field"><label class="f">Payment info</label>
+        <textarea class="inp" id="e_payinfo">${esc(d.payinfo||'')}</textarea></div>
+      <div class="field" style="margin-bottom:0"><label class="f">Notes</label>
+        <textarea class="inp" id="e_notes">${esc(d.notes||'')}</textarea></div>
+    </div>
+
+    <div class="card pad">
+      <div class="sec-h" style="margin-top:0">Signature</div>
+      ${d.signature?`<img src="${d.signature}" style="max-width:240px;border:1px solid var(--line);border-radius:8px">
+        <div style="color:var(--soft);font-size:13px;margin-top:4px">Signed ${fmt(d.signedDate)}</div>
+        <button class="btn ghost sm" style="margin-top:10px" onclick="captureSig()">Replace signature</button>`
+        :`<button class="btn ghost sm" onclick="captureSig()">Add signature</button>`}
+    </div>
+
+    <div class="btnrow noprint" style="margin-top:4px">
+      <button class="btn" onclick="saveInvoice()">Save</button>
+      <button class="btn ghost" onclick="commitDraftThenPreview()">Preview</button>
+    </div>
+    ${editingId?`<button class="btn dang" style="margin-top:10px" onclick="deleteInvoice()">Delete invoice</button>`:''}
+  `;
+}
+function pullEditorFields(){
+  if($('e_no')) draft.no=$('e_no').value.trim();
+  if($('e_date')) draft.date=$('e_date').value;
+  if($('e_due')) draft.due=$('e_due').value;
+  if($('e_tax')) draft.taxRate=+$('e_tax').value||0;
+  if($('e_payinfo')) draft.payinfo=$('e_payinfo').value;
+  if($('e_notes')) draft.notes=$('e_notes').value;
+}
+function liveTax(){
+  draft.taxRate=+$('e_tax').value||0;
+  const t=invTotals(draft);
+  $('t_tax').textContent=money(t.tax); $('t_total').textContent=money(t.total);
+  if($('t_bal')) $('t_bal').textContent=money(t.balance);
+}
+function removeLine(i){ pullEditorFields(); draft.items.splice(i,1); render(); }
+function removePay(i){ pullEditorFields(); draft.payments.splice(i,1); render(); }
+
+function saveInvoice(){
+  pullEditorFields();
+  if(!draft.clientName){ alert('Please select a client first.'); return; }
+  if(editingId){
+    const idx=db.invoices.findIndex(i=>i.id===editingId);
+    db.invoices[idx]=draft;
+  }else{
+    db.invoices.push(draft);
+    // bump counter if this invoice used the auto number
+    const num=parseInt((draft.no.match(/\d+$/)||[])[0],10);
+    if(!isNaN(num) && num>=db.counter) db.counter=num+1;
+  }
+  save(); editingId=draft.id; go('list');
+}
+function commitDraftThenPreview(){ pullEditorFields(); go('preview'); }
+function deleteInvoice(){
+  if(!confirm('Delete this invoice permanently?'))return;
+  db.invoices=db.invoices.filter(i=>i.id!==editingId);
+  save(); go('list');
+}
+
+/* ========== CLIENT PICKER ========== */
+function pickClient(){
+  pullEditorFields();
+  let body=`<input class="inp" placeholder="Search clients…" oninput="filterPick('cli',this.value)" style="margin-bottom:8px">
+    <div class="card" style="margin:0"><div class="addnew" onclick="newClientForm()">＋ Add new client</div></div>
+    <div class="card" id="pickList" style="margin-top:10px"></div>`;
+  openSheet('Choose client', body, '');
+  renderClientPick('');
+}
+function renderClientPick(q){
+  q=(q||'').toLowerCase();
+  const list=db.clients.filter(c=>c.name.toLowerCase().includes(q));
+  $('pickList').innerHTML = list.length? list.map(c=>`
+    <div class="pickitem" onclick="chooseClient('${c.id}')">
+      <div><div class="nm">${esc(c.name)}</div>
+      <div class="sub">${[c.phone,c.email].filter(Boolean).map(esc).join(' · ')||'—'}</div></div>
+      <button class="x" onclick="event.stopPropagation();editClientForm('${c.id}')" style="color:var(--blue);font-size:17px">✎</button>
+    </div>`).join('') : `<p style="color:var(--soft);padding:14px">No saved clients yet.</p>`;
+}
+function filterPick(kind,v){ if(kind==='cli')renderClientPick(v); else renderItemPick(v); }
+function chooseClient(id){
+  const c=db.clients.find(x=>x.id===id); if(!c)return;
+  draft.clientId=c.id; draft.clientName=c.name; draft.clientPhone=c.phone||'';
+  draft.clientEmail=c.email||''; draft.clientAddr=c.addr||'';
+  closeSheet(); render();
+}
+function newClientForm(){ clientForm(null); }
+function editClientForm(id){ clientForm(db.clients.find(c=>c.id===id)); }
+function clientForm(c){
+  const e=c||{name:'',phone:'',email:'',addr:''};
+  const body=`
+    <div class="card pad">
+      <div class="field"><label class="f">Name</label><input class="inp" id="c_name" value="${esc(e.name)}"></div>
+      <div class="field"><label class="f">Phone</label><input class="inp" id="c_phone" value="${esc(e.phone)}"></div>
+      <div class="field"><label class="f">Email</label><input class="inp" id="c_email" value="${esc(e.email)}"></div>
+      <div class="field" style="margin-bottom:0"><label class="f">Address</label><textarea class="inp" id="c_addr">${esc(e.addr)}</textarea></div>
+    </div>
+    <button class="btn" onclick="saveClient('${c?c.id:''}')">Save client</button>
+    ${c?`<button class="btn dang" style="margin-top:10px" onclick="deleteClient('${c.id}')">Delete client</button>`:''}`;
+  openSheet(c?'Edit client':'New client', body, '');
+}
+function saveClient(id){
+  const name=$('c_name').value.trim(); if(!name){alert('Name is required');return;}
+  const obj={name, phone:$('c_phone').value.trim(), email:$('c_email').value.trim(), addr:$('c_addr').value.trim()};
+  if(id){ const c=db.clients.find(x=>x.id===id); Object.assign(c,obj); }
+  else { obj.id=nid(); db.clients.push(obj); id=obj.id; }
+  save(); chooseClient(id);
+}
+function deleteClient(id){
+  if(!confirm('Delete this client?'))return;
+  db.clients=db.clients.filter(c=>c.id!==id); save(); pickClient();
+}
+
+/* ========== ITEM PICKER ========== */
+function pickItem(){
+  pullEditorFields();
+  let body=`<input class="inp" placeholder="Search items…" oninput="filterPick('item',this.value)" style="margin-bottom:8px">
+    <div class="card" style="margin:0"><div class="addnew" onclick="newItemForm()">＋ New custom item</div></div>
+    <div class="card" id="pickList" style="margin-top:10px"></div>`;
+  openSheet('Add item', body, '');
+  renderItemPick('');
+}
+function renderItemPick(q){
+  q=(q||'').toLowerCase();
+  const list=db.items.filter(i=>i.name.toLowerCase().includes(q));
+  $('pickList').innerHTML = list.length? list.map(i=>`
+    <div class="pickitem" onclick="chooseItem('${i.id}')">
+      <div><div class="nm">${esc(i.name)}</div></div>
+      <div class="pr">${money(i.price)}</div>
+      <button class="x" onclick="event.stopPropagation();editItemForm('${i.id}')" style="color:var(--blue);font-size:17px">✎</button>
+    </div>`).join('') : `<p style="color:var(--soft);padding:14px">No saved items.</p>`;
+}
+function chooseItem(id){
+  const it=db.items.find(x=>x.id===id); if(!it)return;
+  // ask qty
+  const body=`<div class="card pad">
+    <div class="nm" style="font-weight:700;font-size:17px">${esc(it.name)}</div>
+    <div style="color:var(--soft);margin-bottom:12px">${money(it.price)} each</div>
+    <div class="grid2">
+      <div class="field"><label class="f">Qty</label><input class="inp" type="number" id="q_qty" value="1" min="1" step="1"></div>
+      <div class="field"><label class="f">Price each</label><input class="inp" type="number" id="q_price" value="${it.price}" step="0.01"></div>
+    </div>
+  </div>
+  <button class="btn" onclick="confirmAddItem('${it.name}')">Add to invoice</button>`;
+  openSheet('Quantity', body, '');
+}
+function confirmAddItem(name){
+  const qty=+$('q_qty').value||1, price=+$('q_price').value||0;
+  draft.items.push({name, qty, price}); closeSheet(); render();
+}
+function newItemForm(){ itemForm(null); }
+function editItemForm(id){ itemForm(db.items.find(i=>i.id===id)); }
+function itemForm(it){
+  const e=it||{name:'',price:''};
+  const body=`<div class="card pad">
+    <div class="field"><label class="f">Item name</label><input class="inp" id="i_name" value="${esc(e.name)}"></div>
+    <div class="field" style="margin-bottom:0"><label class="f">Default price £</label><input class="inp" type="number" id="i_price" value="${e.price}" step="0.01"></div>
+  </div>
+  <button class="btn" onclick="saveItem('${it?it.id:''}')">Save item</button>
+  ${it?`<button class="btn dang" style="margin-top:10px" onclick="deleteItem('${it.id}')">Delete item</button>`:''}`;
+  openSheet(it?'Edit item':'New item', body, '');
+}
+function saveItem(id){
+  const name=$('i_name').value.trim(); if(!name){alert('Name required');return;}
+  const price=+$('i_price').value||0;
+  if(id){ const it=db.items.find(x=>x.id===id); it.name=name; it.price=price; save(); chooseItem(id); }
+  else { const obj={id:nid(),name,price}; db.items.push(obj); save(); chooseItem(obj.id); }
+}
+function deleteItem(id){ if(!confirm('Delete this saved item?'))return; db.items=db.items.filter(i=>i.id!==id); save(); pickItem(); }
+function editLine(idx){
+  const it=draft.items[idx];
+  const body=`<div class="card pad">
+    <div class="field"><label class="f">Description</label><input class="inp" id="l_name" value="${esc(it.name)}"></div>
+    <div class="grid2">
+      <div class="field"><label class="f">Qty</label><input class="inp" type="number" id="l_qty" value="${it.qty}" step="1"></div>
+      <div class="field"><label class="f">Price each</label><input class="inp" type="number" id="l_price" value="${it.price}" step="0.01"></div>
+    </div></div>
+    <button class="btn" onclick="saveLine(${idx})">Update</button>`;
+  openSheet('Edit line', body, '');
+}
+function saveLine(idx){
+  draft.items[idx]={name:$('l_name').value.trim(),qty:+$('l_qty').value||1,price:+$('l_price').value||0};
+  closeSheet(); render();
+}
+
+/* ========== PAYMENTS ========== */
+function addPayment(){
+  pullEditorFields();
+  const bal=invTotals(draft).balance;
+  const body=`<div class="card pad">
+    <div class="field"><label class="f">Amount £</label><input class="inp" type="number" id="p_amt" value="${bal>0?bal.toFixed(2):''}" step="0.01"></div>
+    <div class="field"><label class="f">Date</label><input class="inp" type="date" id="p_date" value="${todayISO()}"></div>
+    <div class="field" style="margin-bottom:0"><label class="f">Method</label>
+      <select class="inp" id="p_method">
+        <option>Cash</option><option>Bank transfer</option><option>Card</option><option>Cheque</option><option>Other</option>
+      </select></div>
+  </div>
+  <button class="btn" onclick="confirmPay()">Record payment</button>`;
+  openSheet('Record payment', body, '');
+}
+function confirmPay(){
+  draft.payments=draft.payments||[];
+  draft.payments.push({amount:+$('p_amt').value||0, date:$('p_date').value, method:$('p_method').value});
+  closeSheet(); render();
+}
+
+/* ========== SIGNATURE ========== */
+function captureSig(){
+  pullEditorFields();
+  const body=`<div class="sigwrap"><canvas id="sig"></canvas><span class="sighint" id="sigHint">Sign here</span></div>
+    <div class="btnrow" style="margin-top:12px">
+      <button class="btn ghost" onclick="clearSig()">Clear</button>
+      <button class="btn" onclick="saveSig()">Save signature</button>
+    </div>`;
+  openSheet('Signature', body, '');
+  setTimeout(initSig,60);
+}
+let sigCtx,sigDrawing=false,sigEmpty=true;
+function initSig(){
+  const c=$('sig'); const r=c.getBoundingClientRect();
+  c.width=r.width*2; c.height=r.height*2;
+  sigCtx=c.getContext('2d'); sigCtx.scale(2,2); sigCtx.lineWidth=2; sigCtx.lineCap='round'; sigCtx.strokeStyle='#111';
+  const pos=e=>{const t=e.touches?e.touches[0]:e; const b=c.getBoundingClientRect(); return {x:t.clientX-b.left,y:t.clientY-b.top};};
+  const start=e=>{e.preventDefault();sigDrawing=true;sigEmpty=false;$('sigHint').style.display='none';const p=pos(e);sigCtx.beginPath();sigCtx.moveTo(p.x,p.y);};
+  const move=e=>{if(!sigDrawing)return;e.preventDefault();const p=pos(e);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();};
+  const end=()=>{sigDrawing=false;};
+  c.addEventListener('mousedown',start);c.addEventListener('mousemove',move);window.addEventListener('mouseup',end);
+  c.addEventListener('touchstart',start,{passive:false});c.addEventListener('touchmove',move,{passive:false});c.addEventListener('touchend',end);
+}
+function clearSig(){ const c=$('sig'); sigCtx.clearRect(0,0,c.width,c.height); sigEmpty=true; $('sigHint').style.display=''; }
+function saveSig(){
+  if(sigEmpty){alert('Please sign first');return;}
+  draft.signature=$('sig').toDataURL('image/png'); draft.signedDate=todayISO();
+  closeSheet(); render();
+}
+
+/* ================= PREVIEW / PAPER ================= */
+function renderPreview(){ $('screen').innerHTML=`<div class="card paper">${paperHTML(draft)}</div>
+  <div class="btnrow noprint" style="margin-top:12px">
+    <button class="btn" onclick="window.print()">Download / Print PDF</button>
+    <button class="btn ghost" onclick="go('editor')">Back to edit</button>
+  </div>`; }
+function paperHTML(inv){
+  const b=db.business, t=invTotals(inv);
+  const rows=(inv.items||[]).map(it=>`<tr>
+      <td>${esc(it.name)}</td>
+      <td>${money(it.price)}</td><td>${it.qty}</td><td>${money(it.price*it.qty)}</td></tr>`).join('');
+  const payRows=(inv.payments||[]).map(p=>`<div class="tr pay"><span>Payment · ${esc(p.method||'')} <span style="color:#999">${fmtShort(p.date)}</span></span><span>-${money(p.amount)}</span></div>`).join('');
+  return `<div class="pp">
+    <div class="pp-top">
+      ${b.logo?`<img class="pp-logo" src="${b.logo}">`:''}
+      <div class="pp-biz">
+        <div class="bn">${esc(b.name)}</div>
+        ${b.contact?`<p>${esc(b.contact)}</p>`:''}
+        ${b.vat?`<p><b>${esc(b.taxName)} #</b> ${esc(b.vat)}</p>`:''}
+        ${(b.addr||'').split('\n').filter(Boolean).map(l=>`<p>${esc(l)}</p>`).join('')}
+        ${b.phone?`<p>${esc(b.phone)}</p>`:''}
+        ${b.email?`<p>${esc(b.email)}</p>`:''}
+      </div>
+      <div class="pp-meta">
+        <div class="lbl">Invoice</div><div class="val">${esc(inv.no)}</div>
+        <div class="lbl">Date</div><div class="val">${fmt(inv.date)}</div>
+        <div class="lbl">Due date</div><div class="val">${fmt(inv.due)}</div>
+        <div class="lbl">Balance due</div><div class="val bal">GBP ${(t.balance).toFixed(2)}</div>
+      </div>
+    </div>
+    <div class="pp-billto">
+      <div class="lbl">Bill to</div>
+      <div class="bn">${esc(inv.clientName||'')}</div>
+      ${inv.clientPhone?`<p>${esc(inv.clientPhone)}</p>`:''}
+      ${inv.clientEmail?`<p>${esc(inv.clientEmail)}</p>`:''}
+      ${(inv.clientAddr||'').split('\n').filter(Boolean).map(l=>`<p>${esc(l)}</p>`).join('')}
+    </div>
+    <table class="pl">
+      <thead><tr><th>Description</th><th>Rate</th><th>Qty</th><th>Amount</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="pp-bottom">
+      <div class="pp-payinfo">
+        <h4>Payment Info</h4>
+        ${inv.payinfo?`<div class="lbl">Payment instructions</div><p>${esc(inv.payinfo)}</p>`:''}
+      </div>
+      <div class="pp-tot">
+        <div class="tr"><span>Subtotal</span><span>${money(t.sub)}</span></div>
+        ${t.tax?`<div class="tr"><span>${esc(b.taxName)} (${inv.taxRate}%)</span><span>${money(t.tax)}</span></div>`:''}
+        <div class="tr big"><span>Total</span><span>${money(t.total)}</span></div>
+        ${payRows}
+        <div class="tr bal"><span>Balance due</span><span>GBP £${(t.balance).toFixed(2)}</span></div>
+      </div>
+    </div>
+    ${inv.signature?`<div class="pp-sig"><img src="${inv.signature}"><div class="lbl">Date signed</div><div>${fmt(inv.signedDate)}</div></div>`:''}
+    ${inv.notes?`<div class="pp-note">${esc(inv.notes)}</div>`:''}
+  </div>`;
+}
+
+/* ================= REPORTS ================= */
+function renderReports(){
+  const years=[...new Set(db.invoices.map(i=>(i.date||'').slice(0,4)).filter(Boolean))].sort((a,b)=>b.localeCompare(a));
+  if(!reportYear) reportYear=years[0]||String(new Date().getFullYear());
+  if(!years.includes(reportYear)) years.unshift(reportYear);
+
+  const tabBtns=`<div class="rtab">
+    ${['paid','clients','items'].map(t=>`<button class="${reportTab===t?'on':''}" onclick="reportTab='${t}';renderReports()">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}
+  </div>`;
+  let table='';
+  const yearInv=db.invoices.filter(i=>(i.date||'').startsWith(reportYear) && invTotals(i).paid>0);
+
+  if(reportTab==='paid'){
+    const months=['Dec','Nov','Oct','Sep','Aug','Jul','Jun','May','Apr','Mar','Feb','Jan'];
+    const totClients=new Set(), rows=[];
+    let yClients=new Set(),yInv=0,yPaid=0;
+    months.forEach((m,i)=>{
+      const mi=11-i; // Dec=11..Jan=0
+      const mInv=db.invoices.filter(inv=>{const d=inv.date||'';return d.startsWith(reportYear)&&(+d.slice(5,7)-1)===mi&&invTotals(inv).paid>0;});
+      const cls=new Set(mInv.map(x=>x.clientName));
+      const paid=mInv.reduce((s,x)=>s+invTotals(x).paid,0);
+      cls.forEach(c=>yClients.add(c)); yInv+=mInv.length; yPaid+=paid;
+      rows.push(`<tr><td>${m}</td><td>${cls.size}</td><td>${mInv.length}</td><td>${money(paid)}</td></tr>`);
+    });
+    table=`<table class="rep"><thead><tr><th></th><th>Clients</th><th>Invoices</th><th>Paid</th></tr></thead>
+      <tbody><tr class="sum"><td>Tax Year ${reportYear}</td><td>${yClients.size}</td><td>${yInv}</td><td>${money(yPaid)}</td></tr>
+      ${rows.join('')}</tbody></table>`;
+  } else if(reportTab==='clients'){
+    const map={};
+    yearInv.forEach(inv=>{const k=inv.clientName||'—'; map[k]=map[k]||{n:0,paid:0}; map[k].n++; map[k].paid+=invTotals(inv).paid;});
+    const arr=Object.entries(map).sort((a,b)=>b[1].paid-a[1].paid);
+    table=`<table class="rep"><thead><tr><th>Client</th><th>Invoices</th><th>Paid</th></tr></thead><tbody>
+      ${arr.length?arr.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${v.n}</td><td>${money(v.paid)}</td></tr>`).join(''):'<tr><td colspan=3 style="text-align:center;color:var(--soft)">No paid invoices</td></tr>'}
+      </tbody></table>`;
+  } else {
+    const map={};
+    yearInv.forEach(inv=>(inv.items||[]).forEach(it=>{map[it.name]=map[it.name]||{q:0,sum:0}; map[it.name].q+=+it.qty||0; map[it.name].sum+=(+it.qty||0)*(+it.price||0);}));
+    const arr=Object.entries(map).sort((a,b)=>b[1].sum-a[1].sum);
+    table=`<table class="rep"><thead><tr><th>Item</th><th>Qty</th><th>Total</th></tr></thead><tbody>
+      ${arr.length?arr.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${v.q}</td><td>${money(v.sum)}</td></tr>`).join(''):'<tr><td colspan=3 style="text-align:center;color:var(--soft)">No data</td></tr>'}
+      </tbody></table>`;
+  }
+  const yrBtns=`<div class="yrs">${years.map(y=>`<button class="${y===reportYear?'on':''}" onclick="reportYear='${y}';renderReports()">${y}</button>`).join('')}</div>`;
+  $('screen').innerHTML=`<div class="card pad">${tabBtns}${table}${yrBtns}</div>`;
+}
+
+/* ================= SETTINGS ================= */
+function renderSettings(){
+  const b=db.business;
+  $('screen').innerHTML=`
+    <div class="card pad" style="text-align:center">
+      ${b.logo?`<img src="${b.logo}" style="width:120px;height:120px;object-fit:contain;border-radius:12px">`
+        :`<div style="width:120px;height:120px;border-radius:12px;background:#eef0f6;display:grid;place-items:center;margin:0 auto;color:var(--soft)">No logo</div>`}
+      <div><button class="btn ghost sm" style="margin-top:12px" onclick="document.getElementById('logoInput').click()">Upload logo</button></div>
+      <input type="file" id="logoInput" accept="image/*" style="display:none" onchange="uploadLogo(event)">
+    </div>
+    <div class="card pad">
+      <div class="field"><label class="f">Business name</label><input class="inp" id="s_name" value="${esc(b.name)}"></div>
+      <div class="field"><label class="f">Contact person</label><input class="inp" id="s_contact" value="${esc(b.contact)}"></div>
+      <div class="grid2">
+        <div class="field"><label class="f">Tax label</label><input class="inp" id="s_taxname" value="${esc(b.taxName)}"></div>
+        <div class="field"><label class="f">${esc(b.taxName)} number</label><input class="inp" id="s_vat" value="${esc(b.vat)}"></div>
+      </div>
+      <div class="field"><label class="f">Address</label><textarea class="inp" id="s_addr">${esc(b.addr)}</textarea></div>
+      <div class="grid2">
+        <div class="field"><label class="f">Phone</label><input class="inp" id="s_phone" value="${esc(b.phone)}"></div>
+        <div class="field"><label class="f">Email</label><input class="inp" id="s_email" value="${esc(b.email)}"></div>
+      </div>
+    </div>
+    <div class="card pad">
+      <div class="field"><label class="f">Default payment info</label><textarea class="inp" id="s_payinfo">${esc(b.payinfo)}</textarea></div>
+      <div class="field"><label class="f">Default notes</label><textarea class="inp" id="s_notes">${esc(b.notes)}</textarea></div>
+      <div class="grid2">
+        <div class="field"><label class="f">Default ${esc(b.taxName)} %</label><input class="inp" type="number" id="s_taxrate" value="${b.taxRate}" step="0.5"></div>
+        <div class="field"><label class="f">Invoice prefix</label><input class="inp" id="s_prefix" value="${esc(b.prefix)}"></div>
+      </div>
+      <div class="field" style="margin-bottom:0"><label class="f">Next number is</label>
+        <input class="inp" type="number" id="s_counter" value="${db.counter}"></div>
+    </div>
+    <div class="btnrow"><button class="btn" onclick="saveSettings()">Save details</button></div>
+    <div class="card pad" style="margin-top:16px">
+      <div class="sec-h" style="margin-top:0">Your data</div>
+      <p style="color:var(--soft);font-size:13.5px;margin:0 0 12px">${db.clients.length} clients · ${db.items.length} saved items · ${db.invoices.length} invoices</p>
+      <div class="btnrow"><button class="btn ghost sm" onclick="exportData()">Export backup</button>
+      <button class="btn ghost sm" onclick="document.getElementById('importInput').click()">Import backup</button></div>
+      <input type="file" id="importInput" accept="application/json" style="display:none" onchange="importData(event)">
+    </div>`;
+}
+function uploadLogo(e){
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader(); r.onload=()=>{ db.business.logo=r.result; save(); render(); }; r.readAsDataURL(f);
+}
+function saveSettings(){
+  const b=db.business;
+  b.name=$('s_name').value.trim(); b.contact=$('s_contact').value.trim();
+  b.taxName=$('s_taxname').value.trim()||'VAT'; b.vat=$('s_vat').value.trim();
+  b.addr=$('s_addr').value; b.phone=$('s_phone').value.trim(); b.email=$('s_email').value.trim();
+  b.payinfo=$('s_payinfo').value; b.notes=$('s_notes').value;
+  b.taxRate=+$('s_taxrate').value||0; b.prefix=$('s_prefix').value.trim()||'INV';
+  db.counter=+$('s_counter').value||db.counter;
+  save(); go('list');
+}
+function exportData(){
+  const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='mattress-heroes-backup-'+todayISO()+'.json'; a.click();
+}
+function importData(e){
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader(); r.onload=()=>{ try{ db=JSON.parse(r.result); save(); alert('Backup restored.'); go('list'); }catch(err){ alert('Could not read that file.'); } };
+  r.readAsText(f);
+}
+
+/* ================= SHEET ================= */
+function openSheet(title,body,action){
+  $('sheetTitle').textContent=title; $('sheetBody').innerHTML=body; $('sheetAction').textContent=action||'';
+  $('sheetBg').classList.add('show'); $('sheet').classList.add('show');
+}
+function closeSheet(){ $('sheetBg').classList.remove('show'); $('sheet').classList.remove('show'); }
+
+/* ================= INIT ================= */
+load(); render();
+</script>
+</body>
+</html>
